@@ -7,6 +7,7 @@ import {
   getMyWorkspacesController,
   getWorkspaceByIdController,
 } from "./workspace.controller";
+import { getWorkspaceBoardsController } from "../boards/board.controller";
 
 export const workspaceRoutes = Router();
 
@@ -21,3 +22,5 @@ workspaceRoutes.post(
 workspaceRoutes.get("/", getMyWorkspacesController);
 
 workspaceRoutes.get("/:workspaceId", getWorkspaceByIdController);
+
+workspaceRoutes.get("/:workspaceId/boards", getWorkspaceBoardsController);
