@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
+import { AppError } from "../errors/app-error";
 
 export function errorHandler(
   error: unknown,
@@ -6,9 +8,22 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ) {
-  console.error(error);
+  if (error instanceof ZodError) {
+    return res.status(400).json({
+      message: "Validation error",
+      errors: error.flatten(),
+    });
+  }
 
-  res.status(500).json({
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
+      message: error.message,
+    });
+  }
+
+  console.error("UNHANDLED ERROR:", error);
+
+  return res.status(500).json({
     message: "Internal server error",
   });
 }
