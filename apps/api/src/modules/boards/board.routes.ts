@@ -6,6 +6,8 @@ import {
   createBoardController,
   getBoardByIdController,
 } from "./board.controller";
+import { reorderColumnsSchema } from "../columns/column.schema";
+import { reorderColumnsController } from "../columns/column.controller";
 
 export const boardRoutes = Router();
 
@@ -16,4 +18,11 @@ boardRoutes.post(
   validateRequest(createBoardSchema),
   createBoardController,
 );
+
+boardRoutes.patch(
+  "/:boardId/columns/reorder",
+  validateRequest(reorderColumnsSchema),
+  reorderColumnsController,
+);
+
 boardRoutes.get("/:boardId", getBoardByIdController);
