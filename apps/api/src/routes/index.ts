@@ -7,6 +7,7 @@ import { columnRoutes } from "../modules/columns/column.routes";
 import { taskRoutes } from "../modules/tasks/task.routes";
 import { commentRoutes } from "../modules/comments/comment.routes";
 import { labelRoutes } from "../modules/labels/label.routes";
+import { assigneeRoutes } from "../modules/assignees/assignee.routes";
 
 export const apiRouter = Router();
 
@@ -18,3 +19,4 @@ apiRouter.use("/columns", columnRoutes);
 apiRouter.use("/tasks", taskRoutes);
 apiRouter.use("/comments", commentRoutes);
 apiRouter.use("/labels", labelRoutes);
+apiRouter.use("/assignees", assigneeRoutes);
