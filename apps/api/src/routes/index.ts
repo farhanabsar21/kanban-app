@@ -8,6 +8,8 @@ import { taskRoutes } from "../modules/tasks/task.routes";
 import { commentRoutes } from "../modules/comments/comment.routes";
 import { labelRoutes } from "../modules/labels/label.routes";
 import { assigneeRoutes } from "../modules/assignees/assignee.routes";
+import { membershipRoutes } from "../modules/memberships/membership.routes";
+import { activityRoutes } from "../modules/activity/activity.routes";
 
 export const apiRouter = Router();
 
@@ -20,3 +22,5 @@ apiRouter.use("/tasks", taskRoutes);
 apiRouter.use("/comments", commentRoutes);
 apiRouter.use("/labels", labelRoutes);
 apiRouter.use("/assignees", assigneeRoutes);
+apiRouter.use("/memberships", membershipRoutes);
+apiRouter.use("/activity", activityRoutes);
