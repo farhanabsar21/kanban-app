@@ -1,3 +1,4 @@
+import {} from "react";
 import { useParams } from "react-router-dom";
 
 export function BoardPage() {
