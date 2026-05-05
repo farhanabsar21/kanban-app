@@ -28,3 +28,11 @@ export async function createWorkspace(input: CreateWorkspaceInput) {
   );
   return res.data;
 }
+
+export async function getWorkspace(workspaceId: string) {
+  const res = await apiClient.get<{ workspace: Workspace }>(
+    `/workspaces/${workspaceId}`,
+  );
+
+  return res.data;
+}

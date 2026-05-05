@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createWorkspace,
   type CreateWorkspaceInput,
+  getWorkspace,
   getWorkspaces,
 } from "../api/workspace-api";
 
@@ -20,5 +21,13 @@ export function useCreateWorkspace() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
     },
+  });
+}
+
+export function useWorkspace(workspaceId?: string) {
+  return useQuery({
+    queryKey: ["workspaces", workspaceId],
+    queryFn: () => getWorkspace(workspaceId!),
+    enabled: Boolean(workspaceId),
   });
 }
