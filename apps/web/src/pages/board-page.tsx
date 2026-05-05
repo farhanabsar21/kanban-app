@@ -20,6 +20,7 @@ import {
   type CreateColumnFormValues,
   createColumnSchema,
 } from "../features/columns/schemas/column-schema";
+import { CreateTaskForm } from "../features/tasks/components/create-task-form";
 
 type ApiError = {
   message: string;
@@ -51,6 +52,9 @@ export function BoardPage() {
   const logoutMutation = useLogout();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [creatingTaskColumnId, setCreatingTaskColumnId] = useState<
+    string | null
+  >(null);
 
   const form = useForm<CreateColumnFormValues>({
     resolver: zodResolver(createColumnSchema),
@@ -242,6 +246,22 @@ export function BoardPage() {
                 </div>
 
                 <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                  {creatingTaskColumnId === column.id ? (
+                    <CreateTaskForm
+                      boardId={board.id}
+                      columnId={column.id}
+                      onCancel={() => setCreatingTaskColumnId(null)}
+                      onCreated={() => setCreatingTaskColumnId(null)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setCreatingTaskColumnId(column.id)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white"
+                    >
+                      <Plus size={15} />
+                      Add task
+                    </button>
+                  )}
                   {column.tasks.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
                       No tasks yet
