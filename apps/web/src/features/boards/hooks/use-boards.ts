@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createBoard,
   type CreateBoardInput,
+  getBoard,
   getWorkspaceBoards,
 } from "../api/board-api";
 
@@ -23,5 +24,13 @@ export function useCreateBoard() {
         queryKey: ["workspaces", variables.workspaceId, "boards"],
       });
     },
+  });
+}
+
+export function useBoard(boardId?: string) {
+  return useQuery({
+    queryKey: ["boards", boardId],
+    queryFn: () => getBoard(boardId!),
+    enabled: Boolean(boardId),
   });
 }
