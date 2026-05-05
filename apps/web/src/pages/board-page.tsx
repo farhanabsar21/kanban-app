@@ -326,6 +326,7 @@ export function BoardPage() {
         <TaskDetailsModal
           taskId={selectedTaskId}
           boardId={board.id}
+          workspaceId={board.workspace.id}
           onClose={() => setSelectedTaskId(null)}
         />
       ) : null}
