@@ -8,10 +8,16 @@ import {
   updateTaskSchema,
 } from "../schemas/task-schema";
 import { CreateCommentForm } from "../../comments/components/create-comment-form";
+import {
+  useAttachLabelToTask,
+  useRemoveLabelFromTask,
+  useWorkspaceLabels,
+} from "../../labels/hooks/use-labels";
 
 type Props = {
   taskId: string;
   boardId: string;
+  workspaceId: string;
   onClose: () => void;
 };
 
@@ -24,11 +30,25 @@ function formatCommentDate(value: string) {
   }).format(new Date(value));
 }
 
-export function TaskDetailsModal({ taskId, boardId, onClose }: Props) {
+export function TaskDetailsModal({
+  taskId,
+  boardId,
+  workspaceId,
+  onClose,
+}: Props) {
   const { data, isLoading } = useTask(taskId);
   const updateTaskMutation = useUpdateTask();
 
   const task = data?.task;
+
+  const { data: labelsData } = useWorkspaceLabels(workspaceId);
+  const attachLabelMutation = useAttachLabelToTask(boardId, taskId);
+  const removeLabelMutation = useRemoveLabelFromTask(boardId, taskId);
+
+  const workspaceLabels = labelsData?.labels ?? [];
+  const attachedLabelIds = new Set(
+    task?.labels.map((item) => item.labelId) ?? [],
+  );
 
   const form = useForm<UpdateTaskFormValues>({
     resolver: zodResolver(updateTaskSchema),
@@ -182,6 +202,87 @@ export function TaskDetailsModal({ taskId, boardId, onClose }: Props) {
                 <p className="text-sm text-slate-400">
                   {task.comments.length} comments
                 </p>
+              </div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="mb-5 flex items-center gap-2">
+                <Tag size={18} />
+                <h3 className="text-lg font-semibold">Labels</h3>
+              </div>
+
+              <div className="mb-5">
+                <p className="mb-2 text-sm font-medium text-slate-300">
+                  Attached labels
+                </p>
+
+                {task.labels.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500">
+                    No labels attached.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {task.labels.map((item) => (
+                      <button
+                        key={item.labelId}
+                        type="button"
+                        onClick={() => removeLabelMutation.mutate(item.labelId)}
+                        disabled={removeLabelMutation.isPending}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{
+                            backgroundColor: item.label.color ?? "#94a3b8",
+                          }}
+                        />
+                        {item.label.name}
+                        <X size={13} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-300">
+                  Available labels
+                </p>
+
+                {workspaceLabels.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500">
+                    No workspace labels yet. Create labels from the backend/API
+                    for now.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {workspaceLabels.map((label) => {
+                      const isAttached = attachedLabelIds.has(label.id);
+
+                      return (
+                        <button
+                          key={label.id}
+                          type="button"
+                          onClick={() => {
+                            if (!isAttached) {
+                              attachLabelMutation.mutate(label.id);
+                            }
+                          }}
+                          disabled={isAttached || attachLabelMutation.isPending}
+                          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 bg-white/5 hover:bg-white/10"
+                        >
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{
+                              backgroundColor: label.color ?? "#94a3b8",
+                            }}
+                          />
+                          {label.name}
+                          {isAttached ? "✓" : "+"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
