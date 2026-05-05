@@ -21,6 +21,7 @@ import {
   createBoardSchema,
 } from "../features/boards/schemas/board-schema";
 import { useWorkspace } from "../features/workspaces/hooks/use-workspaces";
+import { WorkspaceLabelsPanel } from "../features/labels/components/workspace-labels-panel";
 
 type ApiError = {
   message: string;
@@ -201,6 +202,10 @@ export function WorkspacePage() {
               </div>
             </form>
           </div>
+        ) : null}
+
+        {workspaceId ? (
+          <WorkspaceLabelsPanel workspaceId={workspaceId} />
         ) : null}
 
         {isBoardsLoading ? (
