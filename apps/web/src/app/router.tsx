@@ -4,6 +4,7 @@ import { RegisterPage } from "../pages/register-page";
 import { DashboardPage } from "../pages/dashboard-page";
 import { BoardPage } from "../pages/board-page";
 import { GuestRoute, ProtectedRoute } from "./route-guards";
+import { WorkspacePage } from "../pages/workspace-page";
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <BoardPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/workspaces/:workspaceId",
+    element: (
+      <ProtectedRoute>
+        <WorkspacePage />
       </ProtectedRoute>
     ),
   },
