@@ -13,6 +13,11 @@ import {
   useRemoveLabelFromTask,
   useWorkspaceLabels,
 } from "../../labels/hooks/use-labels";
+import { useWorkspaceMembers } from "../../memberships/hooks/use-memberships";
+import {
+  useAddAssigneeToTask,
+  useRemoveAssigneeFromTask,
+} from "../../assignees/hooks/use-assignees";
 
 type Props = {
   taskId: string;
@@ -48,6 +53,15 @@ export function TaskDetailsModal({
   const workspaceLabels = labelsData?.labels ?? [];
   const attachedLabelIds = new Set(
     task?.labels.map((item) => item.labelId) ?? [],
+  );
+
+  const { data: membersData } = useWorkspaceMembers(workspaceId);
+  const addAssigneeMutation = useAddAssigneeToTask(boardId, taskId);
+  const removeAssigneeMutation = useRemoveAssigneeFromTask(boardId, taskId);
+
+  const workspaceMembers = membersData?.members ?? [];
+  const assignedUserIds = new Set(
+    task?.assignees.map((item) => item.userId) ?? [],
   );
 
   const form = useForm<UpdateTaskFormValues>({
@@ -278,6 +292,98 @@ export function TaskDetailsModal({
                           />
                           {label.name}
                           {isAttached ? "✓" : "+"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="mb-5 flex items-center gap-2">
+                <UserRound size={18} />
+                <h3 className="text-lg font-semibold">Assignees</h3>
+              </div>
+
+              <div className="mb-5">
+                <p className="mb-2 text-sm font-medium text-slate-300">
+                  Assigned users
+                </p>
+
+                {task.assignees.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500">
+                    No assignees yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {task.assignees.map((assignee) => (
+                      <div
+                        key={assignee.userId}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900 p-3"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            {assignee.user.name}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {assignee.user.email}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeAssigneeMutation.mutate(assignee.userId)
+                          }
+                          disabled={removeAssigneeMutation.isPending}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-300 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-300">
+                  Workspace members
+                </p>
+
+                {workspaceMembers.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500">
+                    No workspace members found.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {workspaceMembers.map((member) => {
+                      const isAssigned = assignedUserIds.has(member.userId);
+
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => {
+                            if (!isAssigned) {
+                              addAssigneeMutation.mutate(member.userId);
+                            }
+                          }}
+                          disabled={isAssigned || addAssigneeMutation.isPending}
+                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-900 p-3 text-left hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              {member.user.name}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {member.user.email}
+                            </p>
+                          </div>
+
+                          <span className="rounded-full bg-white/10 px-2 py-1 text-xs text-slate-300">
+                            {isAssigned ? "Assigned" : "Assign"}
+                          </span>
                         </button>
                       );
                     })}
