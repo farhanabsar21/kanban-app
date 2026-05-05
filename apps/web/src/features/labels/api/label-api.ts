@@ -8,6 +8,12 @@ export type Label = {
   createdAt: string;
 };
 
+export type CreateLabelInput = {
+  workspaceId: string;
+  name: string;
+  color?: string;
+};
+
 export async function getWorkspaceLabels(workspaceId: string) {
   const res = await apiClient.get<{ labels: Label[] }>(
     `/labels/workspaces/${workspaceId}/labels`,
@@ -27,5 +33,10 @@ export async function removeLabelFromTask(taskId: string, labelId: string) {
     `/labels/tasks/${taskId}/labels/${labelId}`,
   );
 
+  return res.data;
+}
+
+export async function createLabel(input: CreateLabelInput) {
+  const res = await apiClient.post<{ label: Label }>("/labels", input);
   return res.data;
 }

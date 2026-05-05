@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   attachLabelToTask,
+  createLabel,
   getWorkspaceLabels,
   removeLabelFromTask,
 } from "../api/label-api";
@@ -33,6 +34,19 @@ export function useRemoveLabelFromTask(boardId: string, taskId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks", taskId] });
       queryClient.invalidateQueries({ queryKey: ["boards", boardId] });
+    },
+  });
+}
+
+export function useCreateLabel(workspaceId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createLabel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces", workspaceId, "labels"],
+      });
     },
   });
 }
