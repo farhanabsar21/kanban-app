@@ -21,6 +21,7 @@ import {
   createColumnSchema,
 } from "../features/columns/schemas/column-schema";
 import { CreateTaskForm } from "../features/tasks/components/create-task-form";
+import { TaskDetailsModal } from "../features/tasks/components/task-details-modal";
 
 type ApiError = {
   message: string;
@@ -55,6 +56,7 @@ export function BoardPage() {
   const [creatingTaskColumnId, setCreatingTaskColumnId] = useState<
     string | null
   >(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const form = useForm<CreateColumnFormValues>({
     resolver: zodResolver(createColumnSchema),
@@ -273,6 +275,7 @@ export function BoardPage() {
                       return (
                         <button
                           key={task.id}
+                          onClick={() => setSelectedTaskId(task.id)}
                           className="w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-left transition hover:border-white/20 hover:bg-slate-800"
                         >
                           <div className="mb-3 flex items-start justify-between gap-3">
@@ -319,6 +322,13 @@ export function BoardPage() {
           </div>
         )}
       </section>
+      {selectedTaskId ? (
+        <TaskDetailsModal
+          taskId={selectedTaskId}
+          boardId={board.id}
+          onClose={() => setSelectedTaskId(null)}
+        />
+      ) : null}
     </main>
   );
 }
