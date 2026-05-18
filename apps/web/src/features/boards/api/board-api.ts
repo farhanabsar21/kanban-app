@@ -30,6 +30,23 @@ export type BoardTask = {
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
+  assignees?: {
+    userId: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      avatarUrl: string | null;
+    };
+  }[];
+  labels?: {
+    labelId: string;
+    label: {
+      id: string;
+      name: string;
+      color: string | null;
+    };
+  }[];
 };
 
 export type BoardColumn = {

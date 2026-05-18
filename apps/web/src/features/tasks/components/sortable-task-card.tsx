@@ -76,6 +76,36 @@ export function SortableTaskCard({ task, onOpen, disabled }: Props) {
         </p>
       ) : null}
 
+      {task.labels?.length ? (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {task.labels.map((item) => (
+            <span
+              key={item.labelId}
+              className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-xs text-slate-300"
+            >
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: item.label.color ?? "#94a3b8" }}
+              />
+              {item.label.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {task.assignees?.length ? (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {task.assignees.map((item) => (
+            <span
+              key={item.userId}
+              className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300"
+            >
+              {item.user.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span className="inline-flex items-center gap-1">
           <MessageSquare size={13} />

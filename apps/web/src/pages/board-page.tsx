@@ -35,6 +35,8 @@ import {
 import { SortableTaskCard } from "../features/tasks/components/sortable-task-card";
 import { DroppableColumn } from "../features/columns/components/droppable-column";
 import { SortableColumn } from "../features/columns/components/sortable-column";
+import { useWorkspaceLabels } from "../features/labels/hooks/use-labels";
+import { useWorkspaceMembers } from "../features/memberships/hooks/use-memberships";
 
 type ApiError = {
   message: string;
@@ -80,6 +82,9 @@ export function BoardPage() {
     "ALL" | "LOW" | "MEDIUM" | "HIGH" | "URGENT"
   >("ALL");
 
+  const [assigneeFilter, setAssigneeFilter] = useState("ALL");
+  const [labelFilter, setLabelFilter] = useState("ALL");
+
   const form = useForm<CreateColumnFormValues>({
     resolver: zodResolver(createColumnSchema),
     defaultValues: {
@@ -92,7 +97,18 @@ export function BoardPage() {
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const hasActiveFilters =
-    Boolean(normalizedSearch) || priorityFilter !== "ALL";
+    Boolean(normalizedSearch) ||
+    priorityFilter !== "ALL" ||
+    assigneeFilter !== "ALL" ||
+    labelFilter !== "ALL";
+
+  const workspaceId = board?.workspace.id;
+
+  const { data: labelsData } = useWorkspaceLabels(workspaceId);
+  const { data: membersData } = useWorkspaceMembers(workspaceId);
+
+  const workspaceLabels = labelsData?.labels ?? [];
+  const workspaceMembers = membersData?.members ?? [];
 
   const filteredColumns = columns.map((column) => ({
     ...column,
@@ -105,7 +121,17 @@ export function BoardPage() {
       const matchesPriority =
         priorityFilter === "ALL" || task.priority === priorityFilter;
 
-      return matchesSearch && matchesPriority;
+      const matchesAssignee =
+        assigneeFilter === "ALL" ||
+        task.assignees?.some((item) => item.userId === assigneeFilter);
+
+      const matchesLabel =
+        labelFilter === "ALL" ||
+        task.labels?.some((item) => item.labelId === labelFilter);
+
+      return (
+        matchesSearch && matchesPriority && matchesAssignee && matchesLabel
+      );
     }),
   }));
 
@@ -327,6 +353,32 @@ export function BoardPage() {
           />
 
           <select
+            value={assigneeFilter}
+            onChange={(event) => setAssigneeFilter(event.target.value)}
+            className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+          >
+            <option value="ALL">All assignees</option>
+            {workspaceMembers.map((member) => (
+              <option key={member.userId} value={member.userId}>
+                {member.user.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={labelFilter}
+            onChange={(event) => setLabelFilter(event.target.value)}
+            className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+          >
+            <option value="ALL">All labels</option>
+            {workspaceLabels.map((label) => (
+              <option key={label.id} value={label.id}>
+                {label.name}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={priorityFilter}
             onChange={(event) =>
               setPriorityFilter(
@@ -347,11 +399,13 @@ export function BoardPage() {
             <option value="URGENT">Urgent</option>
           </select>
 
-          {searchQuery || priorityFilter !== "ALL" ? (
+          {hasActiveFilters ? (
             <button
               onClick={() => {
                 setSearchQuery("");
                 setPriorityFilter("ALL");
+                setAssigneeFilter("ALL");
+                setLabelFilter("ALL");
               }}
               className="rounded-lg border border-white/10 px-3 py-2.5 text-sm text-slate-300 hover:bg-white/10"
             >
