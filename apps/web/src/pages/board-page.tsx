@@ -6,7 +6,10 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useLogout, useMe } from "../features/auth/hooks/use-auth";
 import { useBoard } from "../features/boards/hooks/use-boards";
-import { useCreateColumn } from "../features/columns/hooks/use-columns";
+import {
+  useCreateColumn,
+  useReorderColumns,
+} from "../features/columns/hooks/use-columns";
 import {
   type CreateColumnFormValues,
   createColumnSchema,
@@ -23,6 +26,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
+  horizontalListSortingStrategy,
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -58,12 +62,15 @@ export function BoardPage() {
   const createColumnMutation = useCreateColumn();
   const moveTaskMutation = useMoveTask();
   const logoutMutation = useLogout();
+  const reorderColumnsMutation = useReorderColumns();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [creatingTaskColumnId, setCreatingTaskColumnId] = useState<
     string | null
   >(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const isSavingOrder =
+    moveTaskMutation.isPending || reorderColumnsMutation.isPending;
 
   const form = useForm<CreateColumnFormValues>({
     resolver: zodResolver(createColumnSchema),
@@ -114,15 +121,46 @@ export function BoardPage() {
 
     if (!over || !board) return;
 
-    const activeTaskId = String(active.id);
+    const activeId = String(active.id);
     const overId = String(over.id);
+
+    const activeType = active.data.current?.type;
+    const overType = over.data.current?.type;
+
+    if (activeType === "column") {
+      const oldIndex = columns.findIndex((column) => column.id === activeId);
+      const newIndex = columns.findIndex((column) => column.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return;
+      }
+
+      const nextColumnIds = [...columns.map((column) => column.id)];
+      const [removed] = nextColumnIds.splice(oldIndex, 1);
+      nextColumnIds.splice(newIndex, 0, removed);
+
+      reorderColumnsMutation.mutate({
+        boardId: board.id,
+        columnIds: nextColumnIds,
+      });
+
+      return;
+    }
+
+    if (activeType !== "task") return;
+
+    const activeTaskId = activeId;
 
     const sourceColumn = findColumnByTaskId(activeTaskId);
 
     if (!sourceColumn) return;
 
-    const overColumn = findColumnById(overId);
-    const targetColumn = overColumn ?? findColumnByTaskId(overId);
+    const overColumn =
+      overType === "column"
+        ? findColumnById(overId)
+        : findColumnByTaskId(overId);
+
+    const targetColumn = overColumn;
 
     if (!targetColumn) return;
 
@@ -146,7 +184,7 @@ export function BoardPage() {
       return;
     }
 
-    moveTaskMutation.mutateAsync({
+    moveTaskMutation.mutate({
       taskId: activeTaskId,
       boardId: board.id,
       targetColumnId: targetColumn.id,
@@ -225,7 +263,7 @@ export function BoardPage() {
             </p>
           </div>
 
-          {moveTaskMutation.isPending ? (
+          {isSavingOrder ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-400">
               Saving order...
             </span>
@@ -313,61 +351,66 @@ export function BoardPage() {
             collisionDetection={closestCorners}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex gap-4 overflow-x-auto pb-6">
-              {columns.map((column) => (
-                <div
-                  key={column.id}
-                  className="flex max-h-[calc(100vh-230px)] min-w-80 flex-col rounded-2xl border border-white/10 bg-white/5"
-                >
-                  <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                    <div>
-                      <h3 className="font-semibold">{column.name}</h3>
-                      <p className="text-xs text-slate-400">
-                        {column.tasks.length} tasks
-                      </p>
+            <SortableContext
+              items={columns.map((column) => column.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="flex gap-4 overflow-x-auto pb-6">
+                {columns.map((column) => (
+                  <div
+                    key={column.id}
+                    className="flex max-h-[calc(100vh-230px)] min-w-80 flex-col rounded-2xl border border-white/10 bg-white/5"
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                      <div>
+                        <h3 className="font-semibold">{column.name}</h3>
+                        <p className="text-xs text-slate-400">
+                          {column.tasks.length} tasks
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <DroppableColumn columnId={column.id}>
-                    {creatingTaskColumnId === column.id ? (
-                      <CreateTaskForm
-                        boardId={board.id}
-                        columnId={column.id}
-                        onCancel={() => setCreatingTaskColumnId(null)}
-                        onCreated={() => setCreatingTaskColumnId(null)}
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setCreatingTaskColumnId(column.id)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white"
-                      >
-                        <Plus size={15} />
-                        Add task
-                      </button>
-                    )}
-                    <SortableContext
-                      items={column.tasks.map((task) => task.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {column.tasks.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
-                          No tasks yet
-                        </div>
+                    <DroppableColumn columnId={column.id}>
+                      {creatingTaskColumnId === column.id ? (
+                        <CreateTaskForm
+                          boardId={board.id}
+                          columnId={column.id}
+                          onCancel={() => setCreatingTaskColumnId(null)}
+                          onCreated={() => setCreatingTaskColumnId(null)}
+                        />
                       ) : (
-                        column.tasks.map((task) => (
-                          <SortableTaskCard
-                            key={task.id}
-                            task={task}
-                            disabled={moveTaskMutation.isPending}
-                            onOpen={() => setSelectedTaskId(task.id)}
-                          />
-                        ))
+                        <button
+                          onClick={() => setCreatingTaskColumnId(column.id)}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white"
+                        >
+                          <Plus size={15} />
+                          Add task
+                        </button>
                       )}
-                    </SortableContext>
-                  </DroppableColumn>
-                </div>
-              ))}
-            </div>
+                      <SortableContext
+                        items={column.tasks.map((task) => task.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {column.tasks.length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
+                            No tasks yet
+                          </div>
+                        ) : (
+                          column.tasks.map((task) => (
+                            <SortableTaskCard
+                              key={task.id}
+                              task={task}
+                              disabled={isSavingOrder}
+                              onOpen={() => setSelectedTaskId(task.id)}
+                            />
+                          ))
+                        )}
+                      </SortableContext>
+                    </DroppableColumn>
+                  </div>
+                ))}
+              </div>
+            </SortableContext>
           </DndContext>
         )}
       </section>
