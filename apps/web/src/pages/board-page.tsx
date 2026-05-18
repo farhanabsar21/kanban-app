@@ -1,15 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import {
-  ArrowLeft,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Flag,
-  LogOut,
-  MessageSquare,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, LogOut, Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -22,6 +13,21 @@ import {
 } from "../features/columns/schemas/column-schema";
 import { CreateTaskForm } from "../features/tasks/components/create-task-form";
 import { TaskDetailsModal } from "../features/tasks/components/task-details-modal";
+import { useMoveTask } from "../features/tasks/hooks/use-tasks";
+import {
+  closestCorners,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableTaskCard } from "../features/tasks/components/sortable-task-card";
+import { DroppableColumn } from "../features/columns/components/droppable-column";
 
 type ApiError = {
   message: string;
@@ -50,6 +56,7 @@ export function BoardPage() {
   const { data: me } = useMe();
   const { data, isLoading } = useBoard(boardId);
   const createColumnMutation = useCreateColumn();
+  const moveTaskMutation = useMoveTask();
   const logoutMutation = useLogout();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -83,6 +90,69 @@ export function BoardPage() {
       // rendered below
     }
   };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  function findColumnByTaskId(taskId: string) {
+    return columns.find((column) =>
+      column.tasks.some((task) => task.id === taskId),
+    );
+  }
+
+  function findColumnById(columnId: string) {
+    return columns.find((column) => column.id === columnId);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (!over || !board) return;
+
+    const activeTaskId = String(active.id);
+    const overId = String(over.id);
+
+    const sourceColumn = findColumnByTaskId(activeTaskId);
+
+    if (!sourceColumn) return;
+
+    const overColumn = findColumnById(overId);
+    const targetColumn = overColumn ?? findColumnByTaskId(overId);
+
+    if (!targetColumn) return;
+
+    const targetTasks = targetColumn.tasks.filter(
+      (task) => task.id !== activeTaskId,
+    );
+
+    const overTaskIndex = targetTasks.findIndex((task) => task.id === overId);
+
+    const targetPosition =
+      overTaskIndex === -1 ? targetTasks.length : Math.max(0, overTaskIndex);
+
+    const sourcePosition = sourceColumn.tasks.findIndex(
+      (task) => task.id === activeTaskId,
+    );
+
+    if (
+      sourceColumn.id === targetColumn.id &&
+      sourcePosition === targetPosition
+    ) {
+      return;
+    }
+
+    moveTaskMutation.mutateAsync({
+      taskId: activeTaskId,
+      boardId: board.id,
+      targetColumnId: targetColumn.id,
+      targetPosition,
+    });
+  }
 
   const onLogout = async () => {
     await logoutMutation.mutateAsync();
@@ -232,94 +302,66 @@ export function BoardPage() {
             </button>
           </div>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-6">
-            {columns.map((column) => (
-              <div
-                key={column.id}
-                className="flex max-h-[calc(100vh-230px)] min-w-80 flex-col rounded-2xl border border-white/10 bg-white/5"
-              >
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                  <div>
-                    <h3 className="font-semibold">{column.name}</h3>
-                    <p className="text-xs text-slate-400">
-                      {column.tasks.length} tasks
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex-1 space-y-3 overflow-y-auto p-3">
-                  {creatingTaskColumnId === column.id ? (
-                    <CreateTaskForm
-                      boardId={board.id}
-                      columnId={column.id}
-                      onCancel={() => setCreatingTaskColumnId(null)}
-                      onCreated={() => setCreatingTaskColumnId(null)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setCreatingTaskColumnId(column.id)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white"
-                    >
-                      <Plus size={15} />
-                      Add task
-                    </button>
-                  )}
-                  {column.tasks.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
-                      No tasks yet
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex gap-4 overflow-x-auto pb-6">
+              {columns.map((column) => (
+                <div
+                  key={column.id}
+                  className="flex max-h-[calc(100vh-230px)] min-w-80 flex-col rounded-2xl border border-white/10 bg-white/5"
+                >
+                  <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                    <div>
+                      <h3 className="font-semibold">{column.name}</h3>
+                      <p className="text-xs text-slate-400">
+                        {column.tasks.length} tasks
+                      </p>
                     </div>
-                  ) : (
-                    column.tasks.map((task) => {
-                      const dueDate = formatDate(task.dueDate);
+                  </div>
 
-                      return (
-                        <button
-                          key={task.id}
-                          onClick={() => setSelectedTaskId(task.id)}
-                          className="w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-left transition hover:border-white/20 hover:bg-slate-800"
-                        >
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <h4 className="font-medium text-white">
-                              {task.title}
-                            </h4>
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-2 py-1 text-xs text-slate-300">
-                              <Flag size={12} />
-                              {priorityLabel[task.priority]}
-                            </span>
-                          </div>
-
-                          {task.description ? (
-                            <p className="mb-3 line-clamp-2 text-sm text-slate-400">
-                              {task.description}
-                            </p>
-                          ) : null}
-
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span className="inline-flex items-center gap-1">
-                              <MessageSquare size={13} />
-                              Comments
-                            </span>
-
-                            {dueDate ? (
-                              <span className="inline-flex items-center gap-1">
-                                <Calendar size={13} />
-                                {dueDate}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1">
-                                <Clock size={13} />
-                                No due date
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
+                  <DroppableColumn columnId={column.id}>
+                    {creatingTaskColumnId === column.id ? (
+                      <CreateTaskForm
+                        boardId={board.id}
+                        columnId={column.id}
+                        onCancel={() => setCreatingTaskColumnId(null)}
+                        onCreated={() => setCreatingTaskColumnId(null)}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setCreatingTaskColumnId(column.id)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-white"
+                      >
+                        <Plus size={15} />
+                        Add task
+                      </button>
+                    )}
+                    <SortableContext
+                      items={column.tasks.map((task) => task.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {column.tasks.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
+                          No tasks yet
+                        </div>
+                      ) : (
+                        column.tasks.map((task) => (
+                          <SortableTaskCard
+                            key={task.id}
+                            task={task}
+                            onOpen={() => setSelectedTaskId(task.id)}
+                          />
+                        ))
+                      )}
+                    </SortableContext>
+                  </DroppableColumn>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </DndContext>
         )}
       </section>
       {selectedTaskId ? (

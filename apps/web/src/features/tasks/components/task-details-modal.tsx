@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Activity,
   ArrowRight,
-  HistoryCalendar,
   Flag,
   MessageSquare,
   Tag,
