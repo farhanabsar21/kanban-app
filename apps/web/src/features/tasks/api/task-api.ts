@@ -78,6 +78,13 @@ export type UpdateTaskInput = {
   dueDate?: string | null;
 };
 
+export type MoveTaskInput = {
+  taskId: string;
+  boardId: string;
+  targetColumnId: string;
+  targetPosition: number;
+};
+
 export async function createTask(input: CreateTaskInput) {
   const res = await apiClient.post<{ task: BoardTask }>("/tasks", input);
   return res.data;
@@ -99,5 +106,20 @@ export async function updateTask(input: UpdateTaskInput) {
   return {
     ...res.data,
     boardId,
+  };
+}
+
+export async function moveTask(input: MoveTaskInput) {
+  const res = await apiClient.patch<{ task: BoardTask }>(
+    `/tasks/${input.taskId}/move`,
+    {
+      targetColumnId: input.targetColumnId,
+      targetPosition: input.targetPosition,
+    },
+  );
+
+  return {
+    ...res.data,
+    boardId: input.boardId,
   };
 }

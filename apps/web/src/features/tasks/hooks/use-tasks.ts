@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTask,
   getTask,
+  moveTask,
   updateTask,
   type CreateTaskInput,
+  type MoveTaskInput,
   type UpdateTaskInput,
 } from "../api/task-api";
 
@@ -40,6 +42,110 @@ export function useUpdateTask() {
 
       queryClient.invalidateQueries({
         queryKey: ["boards", data.boardId],
+      });
+    },
+  });
+}
+
+export function useMoveTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: MoveTaskInput) => moveTask(input),
+
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({
+        queryKey: ["boards", variables.boardId],
+      });
+
+      const previousBoard = queryClient.getQueryData<{
+        board: {
+          columns: {
+            id: string;
+            tasks: {
+              id: string;
+              columnId: string;
+              position: number;
+              [key: string]: unknown;
+            }[];
+            [key: string]: unknown;
+          }[];
+          [key: string]: unknown;
+        };
+      }>(["boards", variables.boardId]);
+
+      queryClient.setQueryData(
+        ["boards", variables.boardId],
+        (oldData: any) => {
+          if (!oldData?.board) return oldData;
+
+          const columns = oldData.board.columns.map((column: any) => ({
+            ...column,
+            tasks: [...column.tasks],
+          }));
+
+          let movedTask: any = null;
+
+          for (const column of columns) {
+            const taskIndex = column.tasks.findIndex(
+              (task: any) => task.id === variables.taskId,
+            );
+
+            if (taskIndex !== -1) {
+              movedTask = column.tasks[taskIndex];
+              column.tasks.splice(taskIndex, 1);
+              break;
+            }
+          }
+
+          if (!movedTask) return oldData;
+
+          const targetColumn = columns.find(
+            (column: any) => column.id === variables.targetColumnId,
+          );
+
+          if (!targetColumn) return oldData;
+
+          const nextTask = {
+            ...movedTask,
+            columnId: variables.targetColumnId,
+          };
+
+          targetColumn.tasks.splice(variables.targetPosition, 0, nextTask);
+
+          const normalizedColumns = columns.map((column: any) => ({
+            ...column,
+            tasks: column.tasks.map((task: any, index: number) => ({
+              ...task,
+              position: index,
+            })),
+          }));
+
+          return {
+            ...oldData,
+            board: {
+              ...oldData.board,
+              columns: normalizedColumns,
+            },
+          };
+        },
+      );
+
+      return { previousBoard };
+    },
+
+    onError: (_error, variables, context) => {
+      if (context?.previousBoard) {
+        queryClient.setQueryData(
+          ["boards", variables.boardId],
+          context.previousBoard,
+        );
+      }
+    },
+
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["boards", variables.boardId],
       });
     },
   });
