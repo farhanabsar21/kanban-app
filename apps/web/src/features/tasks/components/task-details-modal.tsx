@@ -1,5 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar, Flag, MessageSquare, Tag, UserRound, X } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  HistoryCalendar,
+  Flag,
+  MessageSquare,
+  Tag,
+  UserRound,
+  X,
+  History,
+  Calendar,
+} from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTask, useUpdateTask } from "../hooks/use-tasks";
@@ -33,6 +44,49 @@ function formatCommentDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatActivityDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getActivityText(
+  action: string,
+  metadata: Record<string, unknown> | null,
+) {
+  switch (action) {
+    case "TASK_CREATED":
+      return "created this task";
+
+    case "TASK_UPDATED":
+      return "updated this task";
+
+    case "TASK_MOVED":
+      return "moved this task";
+
+    case "COMMENT_ADDED":
+      return "added a comment";
+
+    case "ASSIGNEE_ADDED":
+      return `assigned ${(metadata?.name as string) || "a user"}`;
+
+    case "ASSIGNEE_REMOVED":
+      return `removed ${(metadata?.name as string) || "a user"} from assignees`;
+
+    case "LABEL_ADDED":
+      return `added label ${(metadata?.labelName as string) || ""}`;
+
+    case "LABEL_REMOVED":
+      return `removed label ${(metadata?.labelName as string) || ""}`;
+
+    default:
+      return action.toLowerCase().replaceAll("_", " ");
+  }
 }
 
 export function TaskDetailsModal({
@@ -390,6 +444,73 @@ export function TaskDetailsModal({
                   </div>
                 )}
               </div>
+            </div>
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="mb-5 flex items-center gap-2">
+                <History size={18} />
+                <h3 className="text-lg font-semibold">Activity</h3>
+              </div>
+
+              {task.activities.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 p-5 text-center text-sm text-slate-500">
+                  No activity yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {task.activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex gap-3 rounded-xl border border-white/10 bg-slate-900 p-4"
+                    >
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10">
+                        {activity.action === "TASK_MOVED" ? (
+                          <ArrowRight size={15} />
+                        ) : (
+                          <Activity size={15} />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-slate-300">
+                          <span className="font-semibold text-white">
+                            {activity.actor.name}
+                          </span>{" "}
+                          {getActivityText(activity.action, activity.metadata)}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          {formatActivityDate(activity.createdAt)}
+                        </p>
+
+                        {activity.action === "TASK_UPDATED" &&
+                        Array.isArray(activity.metadata?.updatedFields) ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {(activity.metadata.updatedFields as string[]).map(
+                              (field) => (
+                                <span
+                                  key={field}
+                                  className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-slate-400"
+                                >
+                                  {field}
+                                </span>
+                              ),
+                            )}
+                          </div>
+                        ) : null}
+
+                        {activity.action === "TASK_MOVED" ? (
+                          <p className="mt-2 text-xs text-slate-500">
+                            Target position:{" "}
+                            {String(
+                              activity.metadata?.targetPosition ?? "unknown",
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
               <div className="mb-5 flex items-center gap-2">

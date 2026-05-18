@@ -22,6 +22,7 @@ import {
 } from "../features/boards/schemas/board-schema";
 import { useWorkspace } from "../features/workspaces/hooks/use-workspaces";
 import { WorkspaceLabelsPanel } from "../features/labels/components/workspace-labels-panel";
+import { WorkspaceMembersPanel } from "../features/memberships/components/workspace-members-panel";
 
 type ApiError = {
   message: string;
@@ -204,6 +205,9 @@ export function WorkspacePage() {
           </div>
         ) : null}
 
+        {workspaceId ? (
+          <WorkspaceMembersPanel workspaceId={workspaceId} />
+        ) : null}
         {workspaceId ? (
           <WorkspaceLabelsPanel workspaceId={workspaceId} />
         ) : null}
