@@ -1,9 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createColumn,
+  deleteColumn,
   reorderColumns,
+  updateColumn,
   type CreateColumnInput,
+  type DeleteColumnInput,
   type ReorderColumnsInput,
+  type UpdateColumnInput,
 } from "../api/column-api";
 
 export function useCreateColumn() {
@@ -82,6 +86,28 @@ export function useReorderColumns() {
       queryClient.invalidateQueries({
         queryKey: ["boards", variables.boardId],
       });
+    },
+  });
+}
+
+export function useUpdateColumn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateColumnInput) => updateColumn(input),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["boards", data.boardId] });
+    },
+  });
+}
+
+export function useDeleteColumn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteColumnInput) => deleteColumn(input),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["boards", data.boardId] });
     },
   });
 }
