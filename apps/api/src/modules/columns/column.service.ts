@@ -178,18 +178,35 @@ export async function reorderColumns(
     throw new AppError("Invalid column order", 400);
   }
 
-  await prisma.$transaction(
-    input.columnIds.map((columnId, index) =>
-      prisma.column.update({
-        where: {
-          id: columnId,
-        },
-        data: {
-          position: index,
-        },
-      }),
-    ),
-  );
+  await prisma.$transaction(async (tx) => {
+    // Step 1: move all columns to temporary negative positions
+    await Promise.all(
+      input.columnIds.map((columnId, index) =>
+        tx.column.update({
+          where: {
+            id: columnId,
+          },
+          data: {
+            position: -(index + 1),
+          },
+        }),
+      ),
+    );
+
+    // Step 2: assign final positions
+    await Promise.all(
+      input.columnIds.map((columnId, index) =>
+        tx.column.update({
+          where: {
+            id: columnId,
+          },
+          data: {
+            position: index,
+          },
+        }),
+      ),
+    );
+  });
 
   return prisma.column.findMany({
     where: {
