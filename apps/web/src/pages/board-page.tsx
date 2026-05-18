@@ -225,6 +225,12 @@ export function BoardPage() {
             </p>
           </div>
 
+          {moveTaskMutation.isPending ? (
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-400">
+              Saving order...
+            </span>
+          ) : null}
+
           <button
             onClick={() => setIsCreateOpen(true)}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
@@ -352,6 +358,7 @@ export function BoardPage() {
                           <SortableTaskCard
                             key={task.id}
                             task={task}
+                            disabled={moveTaskMutation.isPending}
                             onOpen={() => setSelectedTaskId(task.id)}
                           />
                         ))
