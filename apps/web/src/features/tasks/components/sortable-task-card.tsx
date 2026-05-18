@@ -6,6 +6,7 @@ import { type BoardTask } from "../../boards/api/board-api";
 type Props = {
   task: BoardTask;
   onOpen: () => void;
+  disabled?: boolean;
 };
 
 const priorityLabel: Record<string, string> = {
@@ -24,7 +25,7 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export function SortableTaskCard({ task, onOpen }: Props) {
+export function SortableTaskCard({ task, onOpen, disabled }: Props) {
   const {
     attributes,
     listeners,
@@ -34,6 +35,7 @@ export function SortableTaskCard({ task, onOpen }: Props) {
     isDragging,
   } = useSortable({
     id: task.id,
+    disabled,
     data: {
       type: "task",
       task,
@@ -53,6 +55,7 @@ export function SortableTaskCard({ task, onOpen }: Props) {
       type="button"
       style={style}
       onClick={onOpen}
+      disabled={disabled}
       className={`w-full rounded-xl border border-white/10 bg-slate-900 p-4 text-left transition hover:border-white/20 hover:bg-slate-800 ${
         isDragging ? "opacity-50" : ""
       }`}
