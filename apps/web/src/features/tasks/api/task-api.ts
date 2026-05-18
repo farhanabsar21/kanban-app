@@ -45,7 +45,28 @@ export type TaskDetail = BoardTask & {
       avatarUrl: string | null;
     };
   }[];
-  activities: unknown[];
+  activities: {
+    id: string;
+    taskId: string;
+    actorId: string;
+    action:
+      | "TASK_CREATED"
+      | "TASK_UPDATED"
+      | "TASK_MOVED"
+      | "COMMENT_ADDED"
+      | "ASSIGNEE_ADDED"
+      | "ASSIGNEE_REMOVED"
+      | "LABEL_ADDED"
+      | "LABEL_REMOVED";
+    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    actor: {
+      id: string;
+      name: string;
+      email: string;
+      avatarUrl: string | null;
+    };
+  }[];
 };
 
 export type UpdateTaskInput = {
