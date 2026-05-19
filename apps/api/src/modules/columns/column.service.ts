@@ -5,6 +5,7 @@ import {
   ReorderColumnsInput,
   UpdateColumnInput,
 } from "./column.schema";
+import { emitBoardEvent } from "../../realtime/socket";
 
 async function ensureBoardMember(userId: string, boardId: string) {
   const board = await prisma.board.findFirst({
@@ -76,13 +77,20 @@ export async function createColumn(userId: string, input: CreateColumnInput) {
 
   const nextPosition = lastColumn ? lastColumn.position + 1 : 0;
 
-  return prisma.column.create({
+  const column = await prisma.column.create({
     data: {
       boardId: input.boardId,
       name: input.name,
       position: nextPosition,
     },
   });
+
+  emitBoardEvent(input.boardId, "board:column-created", {
+    boardId: input.boardId,
+    columnId: column.id,
+  });
+
+  return column;
 }
 
 export async function updateColumn(
@@ -92,7 +100,7 @@ export async function updateColumn(
 ) {
   await ensureColumnMember(userId, columnId);
 
-  return prisma.column.update({
+  const column = await prisma.column.update({
     where: {
       id: columnId,
     },
@@ -100,6 +108,13 @@ export async function updateColumn(
       name: input.name,
     },
   });
+
+  emitBoardEvent(column.boardId, "board:column-updated", {
+    boardId: column.boardId,
+    columnId,
+  });
+
+  return column;
 }
 
 export async function deleteColumn(userId: string, columnId: string) {
@@ -146,6 +161,11 @@ export async function deleteColumn(userId: string, columnId: string) {
         }),
       ),
     );
+  });
+
+  emitBoardEvent(column.boardId, "board:column-deleted", {
+    boardId: column.boardId,
+    columnId,
   });
 
   return {
@@ -206,6 +226,11 @@ export async function reorderColumns(
         }),
       ),
     );
+  });
+
+  emitBoardEvent(boardId, "board:columns-reordered", {
+    boardId,
+    columnIds: input.columnIds,
   });
 
   return prisma.column.findMany({

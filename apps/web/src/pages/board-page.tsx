@@ -35,6 +35,7 @@ import {
 import { SortableTaskCard } from "../features/tasks/components/sortable-task-card";
 import { DroppableColumn } from "../features/columns/components/droppable-column";
 import { SortableColumn } from "../features/columns/components/sortable-column";
+import { useBoardRealtime } from "../features/boards/hooks/use-board-realtime";
 
 type ApiError = {
   message: string;
@@ -225,6 +226,8 @@ export function BoardPage() {
       targetPosition,
     });
   }
+
+  useBoardRealtime(boardId);
 
   const onLogout = async () => {
     await logoutMutation.mutateAsync();
