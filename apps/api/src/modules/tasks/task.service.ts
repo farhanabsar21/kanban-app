@@ -1,6 +1,7 @@
 import { prisma } from "../../database/prisma";
 import { AppError } from "../../common/errors/app-error";
 import { CreateTaskInput, MoveTaskInput, UpdateTaskInput } from "./task.schema";
+import { emitBoardEvent } from "../../realtime/socket";
 
 async function ensureBoardMember(userId: string, boardId: string) {
   const board = await prisma.board.findFirst({
@@ -118,6 +119,11 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       },
     });
 
+    emitBoardEvent(input.boardId, "board:task-created", {
+      boardId: input.boardId,
+      taskId: task.id,
+    });
+
     return task;
   });
 }
@@ -217,6 +223,11 @@ export async function updateTask(
       },
     });
 
+    emitBoardEvent(task.boardId, "board:task-updated", {
+      boardId: task.boardId,
+      taskId,
+    });
+
     return task;
   });
 }
@@ -257,6 +268,11 @@ export async function deleteTask(userId: string, taskId: string) {
     );
   });
 
+  emitBoardEvent(task.boardId, "board:task-deleted", {
+    boardId: task.boardId,
+    taskId,
+  });
+
   return {
     success: true,
   };
@@ -270,17 +286,14 @@ export async function moveTask(
   const task = await ensureTaskMember(userId, taskId);
   await ensureColumnBelongsToBoard(input.targetColumnId, task.boardId);
 
-  return prisma.$transaction(async (tx) => {
+  const movedTask = prisma.$transaction(async (tx) => {
     const sourceColumnId = task.columnId;
     const targetColumnId = input.targetColumnId;
     const isSameColumn = sourceColumnId === targetColumnId;
 
-    const targetTasks = await tx.task.findMany({
+    const sourceTasks = await tx.task.findMany({
       where: {
-        columnId: targetColumnId,
-        NOT: {
-          id: taskId,
-        },
+        columnId: sourceColumnId,
       },
       orderBy: {
         position: "asc",
@@ -290,56 +303,68 @@ export async function moveTask(
       },
     });
 
+    const targetTasks = isSameColumn
+      ? sourceTasks
+      : await tx.task.findMany({
+          where: {
+            columnId: targetColumnId,
+          },
+          orderBy: {
+            position: "asc",
+          },
+          select: {
+            id: true,
+          },
+        });
+
+    const sourceTaskIds = sourceTasks
+      .map((item) => item.id)
+      .filter((id) => id !== taskId);
+
+    const targetTaskIds = targetTasks
+      .map((item) => item.id)
+      .filter((id) => id !== taskId);
+
     const safeTargetPosition = Math.min(
       input.targetPosition,
-      targetTasks.length,
+      targetTaskIds.length,
     );
 
-    const reorderedTargetTasks = [...targetTasks];
-    reorderedTargetTasks.splice(safeTargetPosition, 0, { id: taskId });
+    targetTaskIds.splice(safeTargetPosition, 0, taskId);
 
-    await Promise.all(
-      reorderedTargetTasks.map((item, index) =>
-        tx.task.update({
-          where: {
-            id: item.id,
-          },
-          data: {
-            columnId: targetColumnId,
-            position: index,
-          },
-        }),
-      ),
-    );
-
-    if (!isSameColumn) {
-      const sourceTasks = await tx.task.findMany({
-        where: {
-          columnId: sourceColumnId,
-          NOT: {
-            id: taskId,
-          },
-        },
-        orderBy: {
-          position: "asc",
-        },
-        select: {
-          id: true,
-        },
-      });
-
+    if (isSameColumn) {
       await Promise.all(
-        sourceTasks.map((item, index) =>
+        targetTaskIds.map((id, index) =>
           tx.task.update({
-            where: {
-              id: item.id,
-            },
+            where: { id },
             data: {
+              columnId: targetColumnId,
               position: index,
             },
           }),
         ),
       );
+    } else {
+      await Promise.all([
+        ...sourceTaskIds.map((id, index) =>
+          tx.task.update({
+            where: { id },
+            data: {
+              columnId: sourceColumnId,
+              position: index,
+            },
+          }),
+        ),
+        ...targetTaskIds.map((id, index) =>
+          tx.task.update({
+            where: { id },
+            data: {
+              columnId: targetColumnId,
+              position: index,
+            },
+          }),
+        ),
+      ]);
     }
 
     await tx.activityLog.create({
@@ -361,4 +386,13 @@ export async function moveTask(
       },
     });
   });
+
+  emitBoardEvent(task.boardId, "board:task-moved", {
+    boardId: task.boardId,
+    taskId,
+    targetColumnId: input.targetColumnId,
+    targetPosition: input.targetPosition,
+  });
+
+  return movedTask;
 }

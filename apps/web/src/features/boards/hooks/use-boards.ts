@@ -32,5 +32,7 @@ export function useBoard(boardId?: string) {
     queryKey: ["boards", boardId],
     queryFn: () => getBoard(boardId!),
     enabled: Boolean(boardId),
+    staleTime: 0,
+    gcTime: 0,
   });
 }
