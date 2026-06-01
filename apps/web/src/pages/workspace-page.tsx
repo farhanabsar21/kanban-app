@@ -23,6 +23,7 @@ import {
 import { useWorkspace } from "../features/workspaces/hooks/use-workspaces";
 import { WorkspaceLabelsPanel } from "../features/labels/components/workspace-labels-panel";
 import { WorkspaceMembersPanel } from "../features/memberships/components/workspace-members-panel";
+import { BoardCardSkeleton } from "../components/shared/board-card-skeleton";
 
 type ApiError = {
   message: string;
@@ -213,8 +214,10 @@ export function WorkspacePage() {
         ) : null}
 
         {isBoardsLoading ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-slate-400">
-            Loading boards...
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <BoardCardSkeleton key={index} />
+            ))}
           </div>
         ) : boards.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
