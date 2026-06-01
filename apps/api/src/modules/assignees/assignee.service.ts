@@ -1,5 +1,6 @@
 import { prisma } from "../../database/prisma";
 import { AppError } from "../../common/errors/app-error";
+import { emitBoardEvent } from "../../realtime/socket";
 
 async function ensureTaskMember(currentUserId: string, taskId: string) {
   const task = await prisma.task.findFirst({
@@ -99,7 +100,7 @@ export async function addAssigneeToTask(
     task.board.workspaceId,
   );
 
-  return prisma.$transaction(async (tx) => {
+  const result = prisma.$transaction(async (tx) => {
     const assignee = await tx.taskAssignee.upsert({
       where: {
         taskId_userId: {
@@ -139,6 +140,14 @@ export async function addAssigneeToTask(
 
     return assignee;
   });
+
+  emitBoardEvent(task.boardId, "board:assignee-added", {
+    boardId: task.boardId,
+    taskId,
+    userId: userIdToAssign,
+  });
+
+  return result;
 }
 
 export async function removeAssigneeFromTask(
@@ -188,6 +197,12 @@ export async function removeAssigneeFromTask(
         },
       },
     });
+  });
+
+  emitBoardEvent(task.boardId, "board:assignee-removed", {
+    boardId: task.boardId,
+    taskId,
+    userId: userIdToRemove,
   });
 
   return {

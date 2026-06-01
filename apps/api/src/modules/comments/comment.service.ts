@@ -1,6 +1,7 @@
 import { prisma } from "../../database/prisma";
 import { AppError } from "../../common/errors/app-error";
 import { CreateCommentInput, UpdateCommentInput } from "./comment.schema";
+import { emitBoardEvent } from "../../realtime/socket";
 
 async function ensureTaskMember(userId: string, taskId: string) {
   const task = await prisma.task.findFirst({
@@ -18,6 +19,7 @@ async function ensureTaskMember(userId: string, taskId: string) {
     },
     select: {
       id: true,
+      boardId: true,
     },
   });
 
@@ -56,9 +58,9 @@ export async function createComment(
   taskId: string,
   input: CreateCommentInput,
 ) {
-  await ensureTaskMember(userId, taskId);
+  const task = await ensureTaskMember(userId, taskId);
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const comment = await tx.comment.create({
       data: {
         taskId,
@@ -90,6 +92,13 @@ export async function createComment(
 
     return comment;
   });
+
+  emitBoardEvent(task.boardId, "board:comment-created", {
+    boardId: task.boardId,
+    taskId,
+  });
+
+  return result;
 }
 
 export async function getTaskComments(userId: string, taskId: string) {
@@ -121,8 +130,9 @@ export async function updateComment(
   input: UpdateCommentInput,
 ) {
   const comment = await ensureCommentOwner(userId, commentId);
+  const task = await ensureTaskMember(userId, comment.taskId);
 
-  return prisma.comment.update({
+  const result = prisma.comment.update({
     where: {
       id: comment.id,
     },
@@ -130,15 +140,30 @@ export async function updateComment(
       body: input.body,
     },
   });
+
+  emitBoardEvent(task.boardId, "board:comment-updated", {
+    boardId: task.boardId,
+    taskId: comment.taskId,
+    commentId,
+  });
+
+  return result;
 }
 
 export async function deleteComment(userId: string, commentId: string) {
   const comment = await ensureCommentOwner(userId, commentId);
+  const task = await ensureTaskMember(userId, comment.taskId);
 
   await prisma.comment.delete({
     where: {
       id: comment.id,
     },
+  });
+
+  emitBoardEvent(task.boardId, "board:comment-deleted", {
+    boardId: task.boardId,
+    taskId: comment.taskId,
+    commentId,
   });
 
   return {

@@ -11,6 +11,16 @@ const BOARD_EVENTS = [
   "board:column-updated",
   "board:column-deleted",
   "board:columns-reordered",
+
+  "board:comment-created",
+  "board:comment-updated",
+  "board:comment-deleted",
+
+  "board:label-attached",
+  "board:label-removed",
+
+  "board:assignee-added",
+  "board:assignee-removed",
 ];
 
 export function useBoardRealtime(boardId?: string) {
@@ -25,15 +35,23 @@ export function useBoardRealtime(boardId?: string) {
       socket.emit("board:join", boardId);
     };
 
-    const handleBoardEvent = (payload: { boardId?: string }) => {
-      console.log("socket event received:", payload);
-
+    const handleBoardEvent = (payload: {
+      boardId?: string;
+      taskId?: string;
+    }) => {
       if (payload.boardId !== boardId) return;
 
       queryClient.refetchQueries({
         queryKey: ["boards", boardId],
         type: "active",
       });
+
+      if (payload.taskId) {
+        queryClient.refetchQueries({
+          queryKey: ["tasks", payload.taskId],
+          type: "active",
+        });
+      }
     };
 
     if (!socket.connected) {
