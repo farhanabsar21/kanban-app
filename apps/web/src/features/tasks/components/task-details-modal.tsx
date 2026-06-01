@@ -30,6 +30,7 @@ import {
   useRemoveAssigneeFromTask,
 } from "../../assignees/hooks/use-assignees";
 import { toast } from "sonner";
+import { TaskModalSkeleton } from "../../../components/shared/task-modal-skeleton";
 
 type Props = {
   taskId: string;
@@ -210,7 +211,7 @@ export function TaskDetailsModal({
         </div>
 
         {isLoading || !task ? (
-          <div className="p-6 text-slate-400">Loading task...</div>
+          <TaskModalSkeleton />
         ) : (
           <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-6">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

@@ -13,6 +13,7 @@ import {
   type CreateWorkspaceFormValues,
   createWorkspaceSchema,
 } from "../features/workspaces/schemas/workspace-schema";
+import { WorkspaceCardSkeleton } from "../components/shared/workspace-card-skeleton";
 
 type ApiError = {
   message: string;
@@ -148,8 +149,10 @@ export function DashboardPage() {
         ) : null}
 
         {isLoading ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-slate-400">
-            Loading workspaces...
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <WorkspaceCardSkeleton key={index} />
+            ))}
           </div>
         ) : workspaces.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">

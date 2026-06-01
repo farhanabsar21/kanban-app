@@ -36,6 +36,7 @@ import { SortableTaskCard } from "../features/tasks/components/sortable-task-car
 import { DroppableColumn } from "../features/columns/components/droppable-column";
 import { SortableColumn } from "../features/columns/components/sortable-column";
 import { useBoardRealtime } from "../features/boards/hooks/use-board-realtime";
+import { BoardPageSkeleton } from "../components/shared/board-page-skeleton";
 
 type ApiError = {
   message: string;
@@ -241,11 +242,7 @@ export function BoardPage() {
       : null;
 
   if (isLoading) {
-    return (
-      <main className="min-h-screen bg-slate-950 p-8 text-white">
-        Loading board...
-      </main>
-    );
+    return <BoardPageSkeleton />;
   }
 
   if (!board) {
