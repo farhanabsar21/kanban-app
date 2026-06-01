@@ -7,6 +7,7 @@ import {
   type CreateTaskFormValues,
   createTaskSchema,
 } from "../schemas/task-schema";
+import { toast } from "sonner";
 
 type Props = {
   boardId: string;
@@ -50,10 +51,13 @@ export function CreateTaskForm({
           : undefined,
       });
 
+      toast.success("Task created");
+
       form.reset();
       onCreated();
     } catch {
       // rendered below
+      toast.error("Failed to create task");
     }
   };
 

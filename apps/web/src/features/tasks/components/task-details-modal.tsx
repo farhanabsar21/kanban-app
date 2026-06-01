@@ -9,10 +9,11 @@ import {
   X,
   History,
   Calendar,
+  Trash2,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useTask, useUpdateTask } from "../hooks/use-tasks";
+import { useDeleteTask, useTask, useUpdateTask } from "../hooks/use-tasks";
 import {
   type UpdateTaskFormValues,
   updateTaskSchema,
@@ -28,6 +29,7 @@ import {
   useAddAssigneeToTask,
   useRemoveAssigneeFromTask,
 } from "../../assignees/hooks/use-assignees";
+import { toast } from "sonner";
 
 type Props = {
   taskId: string;
@@ -111,6 +113,7 @@ export function TaskDetailsModal({
   const { data: membersData } = useWorkspaceMembers(workspaceId);
   const addAssigneeMutation = useAddAssigneeToTask(boardId, taskId);
   const removeAssigneeMutation = useRemoveAssigneeFromTask(boardId, taskId);
+  const deleteTaskMutation = useDeleteTask();
 
   const workspaceMembers = membersData?.members ?? [];
   const assignedUserIds = new Set(
@@ -139,14 +142,40 @@ export function TaskDetailsModal({
   }, [task, form]);
 
   const onSubmit = async (values: UpdateTaskFormValues) => {
-    await updateTaskMutation.mutateAsync({
-      taskId,
-      boardId,
-      title: values.title,
-      description: values.description || null,
-      priority: values.priority,
-      dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
-    });
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId,
+        boardId,
+        title: values.title,
+        description: values.description || null,
+        priority: values.priority,
+        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+      });
+
+      toast.success("Task updated");
+    } catch {
+      toast.error("Failed to update task");
+    }
+  };
+
+  const onDeleteTask = async () => {
+    const confirmed = window.confirm(
+      "Delete this task? This action cannot be undone.",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteTaskMutation.mutateAsync({
+        taskId,
+        boardId,
+      });
+
+      toast.success("Task deleted");
+      onClose();
+    } catch {
+      toast.error("Failed to delete task");
+    }
   };
 
   return (
@@ -162,12 +191,22 @@ export function TaskDetailsModal({
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onDeleteTask}
+              disabled={deleteTaskMutation.isPending}
+              className="rounded-lg p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
+            >
+              <Trash2 size={18} />
+            </button>
+
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {isLoading || !task ? (

@@ -489,20 +489,16 @@ export function BoardPage() {
                           items={column.tasks.map((task) => task.id)}
                           strategy={verticalListSortingStrategy}
                         >
-                          {column.tasks.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-500">
-                              No tasks yet
-                            </div>
-                          ) : (
-                            column.tasks.map((task) => (
-                              <SortableTaskCard
-                                key={task.id}
-                                task={task}
-                                disabled={isSavingOrder}
-                                onOpen={() => setSelectedTaskId(task.id)}
-                              />
-                            ))
-                          )}
+                          {column.tasks.length > 0
+                            ? column.tasks.map((task) => (
+                                <SortableTaskCard
+                                  key={task.id}
+                                  task={task}
+                                  disabled={isSavingOrder}
+                                  onOpen={() => setSelectedTaskId(task.id)}
+                                />
+                              ))
+                            : null}
                         </SortableContext>
                       </DroppableColumn>
                     </SortableColumn>

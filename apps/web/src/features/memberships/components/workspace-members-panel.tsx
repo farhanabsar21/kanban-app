@@ -13,6 +13,7 @@ import {
   type AddMemberFormValues,
   addMemberSchema,
 } from "../schemas/member-schema";
+import { toast } from "sonner";
 
 type Props = {
   workspaceId: string;
@@ -47,6 +48,8 @@ export function WorkspaceMembersPanel({ workspaceId }: Props) {
         email: values.email,
         role: values.role,
       });
+
+      toast.success("Member added");
 
       form.reset({
         email: "",
@@ -190,11 +193,17 @@ export function WorkspaceMembersPanel({ workspaceId }: Props) {
                     onChange={(event) => {
                       const role = event.target.value as "ADMIN" | "MEMBER";
 
-                      updateRoleMutation.mutate({
-                        workspaceId,
-                        memberId: member.id,
-                        role,
-                      });
+                      updateRoleMutation.mutate(
+                        {
+                          workspaceId,
+                          memberId: member.id,
+                          role,
+                        },
+                        {
+                          onSuccess: () => toast.success("Role updated"),
+                          onError: () => toast.error("Failed to update role"),
+                        },
+                      );
                     }}
                     className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -209,10 +218,16 @@ export function WorkspaceMembersPanel({ workspaceId }: Props) {
                     type="button"
                     disabled={isOwner || removeMemberMutation.isPending}
                     onClick={() => {
-                      removeMemberMutation.mutate({
-                        workspaceId,
-                        memberId: member.id,
-                      });
+                      removeMemberMutation.mutate(
+                        {
+                          workspaceId,
+                          memberId: member.id,
+                        },
+                        {
+                          onSuccess: () => toast.success("Member removed"),
+                          onError: () => toast.error("Failed to remove member"),
+                        },
+                      );
                     }}
                     className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                   >

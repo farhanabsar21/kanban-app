@@ -6,6 +6,7 @@ import {
   type CreateCommentFormValues,
   createCommentSchema,
 } from "../schemas/comment-schema";
+import { toast } from "sonner";
 
 type Props = {
   taskId: string;
@@ -34,9 +35,12 @@ export function CreateCommentForm({ taskId, boardId }: Props) {
         body: values.body,
       });
 
+      toast.success("Comment posted");
+
       form.reset();
     } catch {
       // rendered below
+      toast.error("Failed to post comment");
     }
   };
 

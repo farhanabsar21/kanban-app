@@ -123,3 +123,19 @@ export async function moveTask(input: MoveTaskInput) {
     boardId: input.boardId,
   };
 }
+
+export type DeleteTaskInput = {
+  taskId: string;
+  boardId: string;
+};
+
+export async function deleteTask(input: DeleteTaskInput) {
+  const res = await apiClient.delete<{ success: boolean }>(
+    `/tasks/${input.taskId}`,
+  );
+
+  return {
+    ...res.data,
+    boardId: input.boardId,
+  };
+}
