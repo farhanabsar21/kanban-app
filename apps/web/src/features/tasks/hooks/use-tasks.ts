@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTask,
+  deleteTask,
   getTask,
   moveTask,
   updateTask,
   type CreateTaskInput,
+  type DeleteTaskInput,
   type MoveTaskInput,
   type UpdateTaskInput,
 } from "../api/task-api";
@@ -146,6 +148,23 @@ export function useMoveTask() {
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["boards", variables.boardId],
+      });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: DeleteTaskInput) => deleteTask(input),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["boards", data.boardId],
+      });
+
+      queryClient.removeQueries({
+        queryKey: ["tasks", variables.taskId],
       });
     },
   });
