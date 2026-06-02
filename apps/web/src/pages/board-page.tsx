@@ -296,31 +296,30 @@ export function BoardPage() {
                 Welcome back, {me?.user.name}
               </p>
             </div>
-          </div>
+            {presenceUsers.length > 0 ? (
+              <div className="hidden items-center gap-2 md:flex">
+                <span className="text-xs text-slate-500">Viewing now</span>
 
-          {presenceUsers.length > 0 ? (
-            <div className="hidden items-center gap-2 md:flex">
-              <span className="text-xs text-slate-500">Viewing now</span>
+                <div className="flex -space-x-2">
+                  {presenceUsers.slice(0, 4).map((user) => (
+                    <div
+                      key={user.socketId}
+                      title={`${user.name} (${user.email})`}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-950 bg-white text-xs font-bold text-slate-950"
+                    >
+                      {user.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  ))}
+                </div>
 
-              <div className="flex -space-x-2">
-                {presenceUsers.slice(0, 4).map((user) => (
-                  <div
-                    key={user.socketId}
-                    title={`${user.name} (${user.email})`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-950 bg-white text-xs font-bold text-slate-950"
-                  >
-                    {user.name.slice(0, 1).toUpperCase()}
-                  </div>
-                ))}
+                {presenceUsers.length > 4 ? (
+                  <span className="text-xs text-slate-400">
+                    +{presenceUsers.length - 4}
+                  </span>
+                ) : null}
               </div>
-
-              {presenceUsers.length > 4 ? (
-                <span className="text-xs text-slate-400">
-                  +{presenceUsers.length - 4}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           <button
             onClick={onLogout}
