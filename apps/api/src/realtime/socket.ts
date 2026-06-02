@@ -4,6 +4,15 @@ import { env } from "../config/env";
 
 let io: Server | null = null;
 
+const boardPresence = new Map<
+  string,
+  Map<string, { socketId: string; name: string; email: string }>
+>();
+
+function getBoardUsers(boardId: string) {
+  return Array.from(boardPresence.get(boardId)?.values() ?? []);
+}
+
 export function initSocket(server: HttpServer) {
   io = new Server(server, {
     cors: {
@@ -13,26 +22,72 @@ export function initSocket(server: HttpServer) {
   });
 
   io.on("connection", (socket) => {
-    socket.on("board:join", (boardId: string) => {
-      socket.join(`board:${boardId}`);
-    });
+    socket.on(
+      "board:join",
+      (payload: {
+        boardId: string;
+        user: { id: string; name: string; email: string };
+      }) => {
+        const { boardId, user } = payload;
+
+        socket.join(`board:${boardId}`);
+
+        const users = boardPresence.get(boardId) ?? new Map();
+
+        users.set(user.id, {
+          socketId: socket.id,
+          name: user.name,
+          email: user.email,
+        });
+
+        boardPresence.set(boardId, users);
+
+        io?.to(`board:${boardId}`).emit("board:presence-updated", {
+          boardId,
+          users: getBoardUsers(boardId),
+        });
+      },
+    );
 
     socket.on("board:leave", (boardId: string) => {
+      const users = boardPresence.get(boardId);
+
+      if (users) {
+        for (const [userId, user] of users.entries()) {
+          if (user.socketId === socket.id) {
+            users.delete(userId);
+          }
+        }
+
+        io?.to(`board:${boardId}`).emit("board:presence-updated", {
+          boardId,
+          users: getBoardUsers(boardId),
+        });
+      }
+
       socket.leave(`board:${boardId}`);
     });
 
     socket.on("disconnect", () => {
-      // no-op for now
+      for (const [boardId, users] of boardPresence.entries()) {
+        let changed = false;
+
+        for (const [userId, user] of users.entries()) {
+          if (user.socketId === socket.id) {
+            users.delete(userId);
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          io?.to(`board:${boardId}`).emit("board:presence-updated", {
+            boardId,
+            users: getBoardUsers(boardId),
+          });
+        }
+      }
     });
   });
-
-  return io;
-}
-
-export function getIO() {
-  if (!io) {
-    throw new Error("Socket.IO has not been initialized");
-  }
 
   return io;
 }

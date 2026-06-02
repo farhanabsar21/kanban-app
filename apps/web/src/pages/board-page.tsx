@@ -84,6 +84,10 @@ export function BoardPage() {
     "ALL" | "LOW" | "MEDIUM" | "HIGH" | "URGENT"
   >("ALL");
 
+  const [presenceUsers, setPresenceUsers] = useState<
+    { socketId: string; name: string; email: string }[]
+  >([]);
+
   const form = useForm<CreateColumnFormValues>({
     resolver: zodResolver(createColumnSchema),
     defaultValues: {
@@ -230,7 +234,17 @@ export function BoardPage() {
     });
   }
 
-  useBoardRealtime(boardId);
+  useBoardRealtime({
+    boardId,
+    user: me?.user
+      ? {
+          id: me.user.id,
+          name: me.user.name,
+          email: me.user.email,
+        }
+      : undefined,
+    onPresenceUpdate: setPresenceUsers,
+  });
 
   const onLogout = async () => {
     await logoutMutation.mutateAsync();
@@ -259,6 +273,8 @@ export function BoardPage() {
     );
   }
 
+  console.log("presence", presenceUsers);
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-white/10 bg-slate-950/80">
@@ -281,6 +297,30 @@ export function BoardPage() {
               </p>
             </div>
           </div>
+
+          {presenceUsers.length > 0 ? (
+            <div className="hidden items-center gap-2 md:flex">
+              <span className="text-xs text-slate-500">Viewing now</span>
+
+              <div className="flex -space-x-2">
+                {presenceUsers.slice(0, 4).map((user) => (
+                  <div
+                    key={user.socketId}
+                    title={`${user.name} (${user.email})`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-950 bg-white text-xs font-bold text-slate-950"
+                  >
+                    {user.name.slice(0, 1).toUpperCase()}
+                  </div>
+                ))}
+              </div>
+
+              {presenceUsers.length > 4 ? (
+                <span className="text-xs text-slate-400">
+                  +{presenceUsers.length - 4}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
 
           <button
             onClick={onLogout}
