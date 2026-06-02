@@ -31,6 +31,7 @@ import {
 } from "../../assignees/hooks/use-assignees";
 import { toast } from "sonner";
 import { TaskModalSkeleton } from "../../../components/shared/task-modal-skeleton";
+import { ErrorState } from "../../../components/shared/error-state";
 
 type Props = {
   taskId: string;
@@ -97,7 +98,7 @@ export function TaskDetailsModal({
   workspaceId,
   onClose,
 }: Props) {
-  const { data, isLoading } = useTask(taskId);
+  const { data, isLoading, isError, refetch } = useTask(taskId);
   const updateTaskMutation = useUpdateTask();
 
   const task = data?.task;
@@ -210,8 +211,16 @@ export function TaskDetailsModal({
           </div>
         </div>
 
-        {isLoading || !task ? (
+        {isLoading ? (
           <TaskModalSkeleton />
+        ) : isError || !task ? (
+          <div className="p-6">
+            <ErrorState
+              title="Could not load task"
+              description="The task may have been deleted or you may not have access."
+              onRetry={() => refetch()}
+            />
+          </div>
         ) : (
           <div className="max-h-[calc(90vh-73px)] overflow-y-auto p-6">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
