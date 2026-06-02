@@ -23,16 +23,39 @@ const BOARD_EVENTS = [
   "board:assignee-removed",
 ];
 
-export function useBoardRealtime(boardId?: string) {
+type PresenceUser = {
+  socketId: string;
+  name: string;
+  email: string;
+};
+
+type UseBoardRealtimeOptions = {
+  boardId?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  onPresenceUpdate?: (users: PresenceUser[]) => void;
+};
+
+export function useBoardRealtime({
+  boardId,
+  user,
+  onPresenceUpdate,
+}: UseBoardRealtimeOptions) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!boardId) return;
 
     const joinBoard = () => {
-      console.log("socket connected:", socket.id);
-      console.log("joining board:", boardId);
-      socket.emit("board:join", boardId);
+      if (!boardId || !user) return;
+
+      socket.emit("board:join", {
+        boardId,
+        user,
+      });
     };
 
     const handleBoardEvent = (payload: {
@@ -54,6 +77,14 @@ export function useBoardRealtime(boardId?: string) {
       }
     };
 
+    const handlePresenceUpdate = (payload: {
+      boardId?: string;
+      users: PresenceUser[];
+    }) => {
+      if (payload.boardId !== boardId) return;
+      onPresenceUpdate?.(payload.users);
+    };
+
     if (!socket.connected) {
       socket.connect();
     } else {
@@ -66,6 +97,8 @@ export function useBoardRealtime(boardId?: string) {
       socket.on(event, handleBoardEvent);
     });
 
+    socket.on("board:presence-updated", handlePresenceUpdate);
+
     return () => {
       socket.emit("board:leave", boardId);
       socket.off("connect", joinBoard);
@@ -73,6 +106,8 @@ export function useBoardRealtime(boardId?: string) {
       BOARD_EVENTS.forEach((event) => {
         socket.off(event, handleBoardEvent);
       });
+
+      socket.off("board:presence-updated", handlePresenceUpdate);
     };
   }, [boardId, queryClient]);
 }
