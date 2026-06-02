@@ -24,6 +24,8 @@ import { useWorkspace } from "../features/workspaces/hooks/use-workspaces";
 import { WorkspaceLabelsPanel } from "../features/labels/components/workspace-labels-panel";
 import { WorkspaceMembersPanel } from "../features/memberships/components/workspace-members-panel";
 import { BoardCardSkeleton } from "../components/shared/board-card-skeleton";
+import { ErrorState } from "../components/shared/error-state";
+import { EmptyState } from "../components/shared/empty-state";
 
 type ApiError = {
   message: string;
@@ -36,8 +38,12 @@ export function WorkspacePage() {
   const { data: me } = useMe();
   const { data: workspaceData, isLoading: isWorkspaceLoading } =
     useWorkspace(workspaceId);
-  const { data: boardsData, isLoading: isBoardsLoading } =
-    useWorkspaceBoards(workspaceId);
+  const {
+    data: boardsData,
+    isLoading: isBoardsLoading,
+    isError: isBoardsError,
+    refetch: refetchBoards,
+  } = useWorkspaceBoards(workspaceId);
 
   const createBoardMutation = useCreateBoard();
   const logoutMutation = useLogout();
@@ -219,6 +225,27 @@ export function WorkspacePage() {
               <BoardCardSkeleton key={index} />
             ))}
           </div>
+        ) : isBoardsError ? (
+          <ErrorState
+            title="Could not load boards"
+            description="Something went wrong while loading boards for this workspace."
+            onRetry={() => refetchBoards()}
+          />
+        ) : boards.length === 0 ? (
+          <EmptyState
+            icon={<LayoutGrid size={22} />}
+            title="No boards yet"
+            description="Create your first board to start adding columns and tasks."
+            action={
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+              >
+                <Plus size={16} />
+                Create board
+              </button>
+            }
+          />
         ) : boards.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">

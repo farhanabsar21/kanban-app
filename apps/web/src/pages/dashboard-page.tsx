@@ -14,6 +14,8 @@ import {
   createWorkspaceSchema,
 } from "../features/workspaces/schemas/workspace-schema";
 import { WorkspaceCardSkeleton } from "../components/shared/workspace-card-skeleton";
+import { ErrorState } from "../components/shared/error-state";
+import { EmptyState } from "../components/shared/empty-state";
 
 type ApiError = {
   message: string;
@@ -22,7 +24,7 @@ type ApiError = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: me } = useMe();
-  const { data, isLoading } = useWorkspaces();
+  const { data, isLoading, isError, refetch } = useWorkspaces();
   const createWorkspaceMutation = useCreateWorkspace();
   const logoutMutation = useLogout();
 
@@ -154,6 +156,27 @@ export function DashboardPage() {
               <WorkspaceCardSkeleton key={index} />
             ))}
           </div>
+        ) : isError ? (
+          <ErrorState
+            title="Could not load workspaces"
+            description="Check your connection or try again in a moment."
+            onRetry={() => refetch()}
+          />
+        ) : workspaces.length === 0 ? (
+          <EmptyState
+            icon={<LayoutDashboard size={22} />}
+            title="No workspaces yet"
+            description="Create your first workspace to start organizing boards, columns, and tasks."
+            action={
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+              >
+                <Plus size={16} />
+                Create workspace
+              </button>
+            }
+          />
         ) : workspaces.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">

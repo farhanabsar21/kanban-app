@@ -37,6 +37,8 @@ import { DroppableColumn } from "../features/columns/components/droppable-column
 import { SortableColumn } from "../features/columns/components/sortable-column";
 import { useBoardRealtime } from "../features/boards/hooks/use-board-realtime";
 import { BoardPageSkeleton } from "../components/shared/board-page-skeleton";
+import { ErrorState } from "../components/shared/error-state";
+import { EmptyState } from "../components/shared/empty-state";
 
 type ApiError = {
   message: string;
@@ -63,7 +65,7 @@ export function BoardPage() {
   const navigate = useNavigate();
 
   const { data: me } = useMe();
-  const { data, isLoading } = useBoard(boardId);
+  const { data, isLoading, isError, refetch } = useBoard(boardId);
   const createColumnMutation = useCreateColumn();
   const updateColumnMutation = useUpdateColumn();
   const deleteColumnMutation = useDeleteColumn();
@@ -245,10 +247,14 @@ export function BoardPage() {
     return <BoardPageSkeleton />;
   }
 
-  if (!board) {
+  if (isError || !board) {
     return (
       <main className="min-h-screen bg-slate-950 p-8 text-white">
-        Board not found
+        <ErrorState
+          title="Board not found"
+          description="This board may not exist, or you may not have access to it."
+          onRetry={() => refetch()}
+        />
       </main>
     );
   }
@@ -410,23 +416,20 @@ export function BoardPage() {
         ) : null}
 
         {filteredColumns.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-10 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-              <CheckCircle2 size={22} />
-            </div>
-            <h3 className="text-lg font-semibold">No columns yet</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-              Create columns like Todo, In Progress, and Done to start using
-              this board.
-            </p>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
-            >
-              <Plus size={16} />
-              Create column
-            </button>
-          </div>
+          <EmptyState
+            icon={<CheckCircle2 size={22} />}
+            title="No columns yet"
+            description="Create columns like Todo, In Progress, and Done to start using this board."
+            action={
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+              >
+                <Plus size={16} />
+                Create column
+              </button>
+            }
+          />
         ) : (
           <DndContext
             sensors={sensors}
