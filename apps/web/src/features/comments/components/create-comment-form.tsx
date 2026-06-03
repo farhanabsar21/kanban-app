@@ -11,13 +11,20 @@ import { toast } from "sonner";
 type Props = {
   taskId: string;
   boardId: string;
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 };
 
 type ApiError = {
   message: string;
 };
 
-export function CreateCommentForm({ taskId, boardId }: Props) {
+export function CreateCommentForm({
+  taskId,
+  boardId,
+  onTypingStart,
+  onTypingStop,
+}: Props) {
   const createCommentMutation = useCreateComment();
 
   const form = useForm<CreateCommentFormValues>({
@@ -38,6 +45,7 @@ export function CreateCommentForm({ taskId, boardId }: Props) {
       toast.success("Comment posted");
 
       form.reset();
+      onTypingStop?.();
     } catch {
       // rendered below
       toast.error("Failed to post comment");
@@ -62,6 +70,19 @@ export function CreateCommentForm({ taskId, boardId }: Props) {
         {...form.register("body")}
         rows={3}
         placeholder="Write a comment..."
+        onChange={(event) => {
+          form.setValue("body", event.target.value, {
+            shouldValidate: true,
+            shouldDirty: true,
+          });
+
+          if (event.target.value.trim()) {
+            onTypingStart?.();
+          } else {
+            onTypingStop?.();
+          }
+        }}
+        onBlur={() => onTypingStop?.()}
         className="w-full resize-none rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-500 focus:border-white/30"
       />
 

@@ -49,6 +49,40 @@ export function initSocket(server: HttpServer) {
       },
     );
 
+    socket.on(
+      "comment:typing-start",
+      (payload: {
+        boardId: string;
+        taskId: string;
+        user: {
+          id: string;
+          name: string;
+          email: string;
+        };
+      }) => {
+        socket
+          .to(`board:${payload.boardId}`)
+          .emit("comment:typing-start", payload);
+      },
+    );
+
+    socket.on(
+      "comment:typing-stop",
+      (payload: {
+        boardId: string;
+        taskId: string;
+        user: {
+          id: string;
+          name: string;
+          email: string;
+        };
+      }) => {
+        socket
+          .to(`board:${payload.boardId}`)
+          .emit("comment:typing-stop", payload);
+      },
+    );
+
     socket.on("board:leave", (boardId: string) => {
       const users = boardPresence.get(boardId);
 
