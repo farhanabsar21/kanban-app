@@ -32,6 +32,8 @@ import {
 import { toast } from "sonner";
 import { TaskModalSkeleton } from "../../../components/shared/task-modal-skeleton";
 import { ErrorState } from "../../../components/shared/error-state";
+import { useMe } from "../../auth/hooks/use-auth";
+import { useCommentTyping } from "../../comments/hooks/use-comment-typing";
 
 type Props = {
   taskId: string;
@@ -116,6 +118,20 @@ export function TaskDetailsModal({
   const addAssigneeMutation = useAddAssigneeToTask(boardId, taskId);
   const removeAssigneeMutation = useRemoveAssigneeFromTask(boardId, taskId);
   const deleteTaskMutation = useDeleteTask();
+
+  const { data: me } = useMe();
+
+  const { typingUsers, startTyping, stopTyping } = useCommentTyping({
+    boardId,
+    taskId,
+    user: me?.user
+      ? {
+          id: me.user.id,
+          name: me.user.name,
+          email: me.user.email,
+        }
+      : undefined,
+  });
 
   const workspaceMembers = membersData?.members ?? [];
   const assignedUserIds = new Set(
@@ -566,7 +582,20 @@ export function TaskDetailsModal({
                 <h3 className="text-lg font-semibold">Comments</h3>
               </div>
 
-              <CreateCommentForm taskId={task.id} boardId={boardId} />
+              <CreateCommentForm
+                taskId={task.id}
+                boardId={boardId}
+                onTypingStart={startTyping}
+                onTypingStop={stopTyping}
+              />
+
+              {typingUsers.length > 0 ? (
+                <p className="mt-3 text-sm text-slate-400">
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0].name} is typing...`
+                    : `${typingUsers.map((user) => user.name).join(", ")} are typing...`}
+                </p>
+              ) : null}
 
               <div className="mt-6 space-y-4">
                 {task.comments.length === 0 ? (
