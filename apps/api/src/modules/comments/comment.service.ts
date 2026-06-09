@@ -2,6 +2,7 @@ import { prisma } from "../../database/prisma";
 import { AppError } from "../../common/errors/app-error";
 import { CreateCommentInput, UpdateCommentInput } from "./comment.schema";
 import { emitBoardEvent } from "../../realtime/socket";
+import { createNotification } from "../notifications/notification.service";
 
 async function ensureTaskMember(userId: string, taskId: string) {
   const task = await prisma.task.findFirst({
@@ -78,6 +79,34 @@ export async function createComment(
         },
       },
     });
+
+    const taskDetail = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: {
+        title: true,
+        assignees: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    await Promise.all(
+      (taskDetail?.assignees ?? []).map((assignee) =>
+        createNotification({
+          recipientId: assignee.userId,
+          actorId: userId,
+          boardId: task.boardId,
+          taskId,
+          type: "COMMENT_ADDED",
+          title: "New comment on assigned task",
+          message: `A new comment was added on "${taskDetail?.title}".`,
+          metadata: {
+            taskId,
+            commentId: comment.id,
+          },
+        }),
+      ),
+    );
 
     await tx.activityLog.create({
       data: {

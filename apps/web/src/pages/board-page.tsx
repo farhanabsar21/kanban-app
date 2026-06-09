@@ -39,6 +39,7 @@ import { useBoardRealtime } from "../features/boards/hooks/use-board-realtime";
 import { BoardPageSkeleton } from "../components/shared/board-page-skeleton";
 import { ErrorState } from "../components/shared/error-state";
 import { EmptyState } from "../components/shared/empty-state";
+import { NotificationBell } from "../features/notifications/components/notification-bell";
 
 type ApiError = {
   message: string;
@@ -273,8 +274,6 @@ export function BoardPage() {
     );
   }
 
-  console.log("presence", presenceUsers);
-
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-white/10 bg-slate-950/80">
@@ -288,13 +287,15 @@ export function BoardPage() {
             </Link>
 
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                {board.workspace.name}
-              </p>
-              <h1 className="text-xl font-bold">{board.name}</h1>
-              <p className="text-sm text-slate-400">
-                Welcome back, {me?.user.name}
-              </p>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  {board.workspace.name}
+                </p>
+                <h1 className="text-xl font-bold">{board.name}</h1>
+                <p className="text-sm text-slate-400">
+                  Welcome back, {me?.user.name}
+                </p>
+              </div>
             </div>
             {presenceUsers.length > 0 ? (
               <div className="hidden items-center gap-2 md:flex">
@@ -321,14 +322,18 @@ export function BoardPage() {
             ) : null}
           </div>
 
-          <button
-            onClick={onLogout}
-            disabled={logoutMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/10 disabled:opacity-60"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+
+            <button
+              onClick={onLogout}
+              disabled={logoutMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/10 disabled:opacity-60"
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

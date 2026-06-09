@@ -1,6 +1,7 @@
 import { prisma } from "../../database/prisma";
 import { AppError } from "../../common/errors/app-error";
 import { emitBoardEvent } from "../../realtime/socket";
+import { createNotification } from "../notifications/notification.service";
 
 async function ensureTaskMember(currentUserId: string, taskId: string) {
   const task = await prisma.task.findFirst({
@@ -145,6 +146,20 @@ export async function addAssigneeToTask(
     boardId: task.boardId,
     taskId,
     userId: userIdToAssign,
+  });
+
+  await createNotification({
+    recipientId: userIdToAssign,
+    actorId: currentUserId,
+    workspaceId: task.board.workspaceId,
+    boardId: task.boardId,
+    taskId,
+    type: "TASK_ASSIGNED",
+    title: "You were assigned to a task",
+    message: `You were assigned to a task by ${membership.user.name}.`,
+    metadata: {
+      taskId,
+    },
   });
 
   return result;

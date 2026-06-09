@@ -10,6 +10,7 @@ import { labelRoutes } from "../modules/labels/label.routes";
 import { assigneeRoutes } from "../modules/assignees/assignee.routes";
 import { membershipRoutes } from "../modules/memberships/membership.routes";
 import { activityRoutes } from "../modules/activity/activity.routes";
+import { notificationRoutes } from "../modules/notifications/notification.routes";
 
 export const apiRouter = Router();
 
@@ -24,3 +25,4 @@ apiRouter.use("/labels", labelRoutes);
 apiRouter.use("/assignees", assigneeRoutes);
 apiRouter.use("/memberships", membershipRoutes);
 apiRouter.use("/activity", activityRoutes);
+apiRouter.use("/notifications", notificationRoutes);
