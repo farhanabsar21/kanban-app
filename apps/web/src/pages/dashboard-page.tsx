@@ -16,6 +16,7 @@ import {
 import { WorkspaceCardSkeleton } from "../components/shared/workspace-card-skeleton";
 import { ErrorState } from "../components/shared/error-state";
 import { EmptyState } from "../components/shared/empty-state";
+import { NotificationBell } from "../features/notifications/components/notification-bell";
 
 type ApiError = {
   message: string;
@@ -72,14 +73,18 @@ export function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={onLogout}
-            disabled={logoutMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/10 disabled:opacity-60"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+
+            <button
+              onClick={onLogout}
+              disabled={logoutMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/10 disabled:opacity-60"
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 

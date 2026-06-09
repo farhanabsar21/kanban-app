@@ -21,6 +21,7 @@ const BOARD_EVENTS = [
 
   "board:assignee-added",
   "board:assignee-removed",
+  "board:notification-created",
 ];
 
 type PresenceUser = {
@@ -75,6 +76,11 @@ export function useBoardRealtime({
           type: "active",
         });
       }
+
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
     };
 
     const handlePresenceUpdate = (payload: {
