@@ -17,6 +17,7 @@ import { WorkspaceCardSkeleton } from "../components/shared/workspace-card-skele
 import { ErrorState } from "../components/shared/error-state";
 import { EmptyState } from "../components/shared/empty-state";
 import { NotificationBell } from "../features/notifications/components/notification-bell";
+import { DashboardAnalyticsCards } from "../features/analytics/components/dashboard-analytics-cards";
 
 type ApiError = {
   message: string;
@@ -105,7 +106,6 @@ export function DashboardPage() {
             New workspace
           </button>
         </div>
-
         {isCreateOpen ? (
           <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
             <h3 className="mb-4 text-lg font-semibold">Create workspace</h3>
@@ -154,6 +154,8 @@ export function DashboardPage() {
             </form>
           </div>
         ) : null}
+
+        <DashboardAnalyticsCards />
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

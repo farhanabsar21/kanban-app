@@ -11,6 +11,7 @@ import { assigneeRoutes } from "../modules/assignees/assignee.routes";
 import { membershipRoutes } from "../modules/memberships/membership.routes";
 import { activityRoutes } from "../modules/activity/activity.routes";
 import { notificationRoutes } from "../modules/notifications/notification.routes";
+import { analyticsRoutes } from "../modules/analytics/analytics.routes";
 
 export const apiRouter = Router();
 
@@ -26,3 +27,4 @@ apiRouter.use("/assignees", assigneeRoutes);
 apiRouter.use("/memberships", membershipRoutes);
 apiRouter.use("/activity", activityRoutes);
 apiRouter.use("/notifications", notificationRoutes);
+apiRouter.use("/analytics", analyticsRoutes);
