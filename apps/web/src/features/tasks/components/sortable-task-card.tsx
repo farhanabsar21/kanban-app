@@ -42,7 +42,52 @@ export function SortableTaskCard({ task, onOpen, disabled }: Props) {
     },
   });
 
-  const dueDate = formatDate(task.dueDate);
+  function getDueDateStyle(value: string | null) {
+    if (!value) {
+      return {
+        label: "No due date",
+        className: "text-slate-500",
+      };
+    }
+
+    const now = new Date();
+    const due = new Date(value);
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+
+    const diffDays = Math.ceil(
+      (dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (diffDays < 0) {
+      return {
+        label: `Overdue · ${formatDate(value)}`,
+        className: "text-red-300",
+      };
+    }
+
+    if (diffDays === 0) {
+      return {
+        label: `Due today`,
+        className: "text-orange-300",
+      };
+    }
+
+    if (diffDays <= 2) {
+      return {
+        label: `Due soon · ${formatDate(value)}`,
+        className: "text-yellow-300",
+      };
+    }
+
+    return {
+      label: formatDate(value) ?? "No due date",
+      className: "text-emerald-300",
+    };
+  }
+
+  const dueDate = getDueDateStyle(task.dueDate);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -82,17 +127,10 @@ export function SortableTaskCard({ task, onOpen, disabled }: Props) {
           Comments
         </span>
 
-        {dueDate ? (
-          <span className="inline-flex items-center gap-1">
-            <Calendar size={13} />
-            {dueDate}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1">
-            <Clock size={13} />
-            No due date
-          </span>
-        )}
+        <span className={`inline-flex items-center gap-1 ${dueDate.className}`}>
+          {task.dueDate ? <Calendar size={13} /> : <Clock size={13} />}
+          {dueDate.label}
+        </span>
       </div>
     </button>
   );
