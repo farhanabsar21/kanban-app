@@ -6,6 +6,7 @@ import {
   useNotifications,
   useUnreadNotificationCount,
 } from "../hooks/use-notifications";
+import { useNavigate } from "react-router-dom";
 
 function formatNotificationDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -18,6 +19,7 @@ function formatNotificationDate(value: string) {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: countData } = useUnreadNotificationCount();
   const { data, isLoading } = useNotifications();
@@ -80,6 +82,13 @@ export function NotificationBell() {
                     onClick={() => {
                       if (isUnread) {
                         markReadMutation.mutate(notification.id);
+                      }
+
+                      if (notification.boardId && notification.taskId) {
+                        navigate(
+                          `/boards/${notification.boardId}?task=${notification.taskId}`,
+                        );
+                        setIsOpen(false);
                       }
                     }}
                     className={`block w-full border-b border-white/10 px-4 py-3 text-left hover:bg-white/5 ${
