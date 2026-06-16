@@ -3,7 +3,12 @@ import { AxiosError } from "axios";
 import { ArrowLeft, CheckCircle2, LogOut, Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useLogout, useMe } from "../features/auth/hooks/use-auth";
 import { useBoard } from "../features/boards/hooks/use-boards";
 import {
@@ -78,7 +83,17 @@ export function BoardPage() {
   const [creatingTaskColumnId, setCreatingTaskColumnId] = useState<
     string | null
   >(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedTaskId = searchParams.get("task");
+
+  const openTask = (taskId: string) => {
+    setSearchParams({ task: taskId });
+  };
+
+  const closeTask = () => {
+    setSearchParams({});
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<
@@ -539,7 +554,7 @@ export function BoardPage() {
                                   key={task.id}
                                   task={task}
                                   disabled={isSavingOrder}
-                                  onOpen={() => setSelectedTaskId(task.id)}
+                                  onOpen={() => openTask(task.id)}
                                 />
                               ))
                             : null}
@@ -558,7 +573,7 @@ export function BoardPage() {
           taskId={selectedTaskId}
           boardId={board.id}
           workspaceId={board.workspace.id}
-          onClose={() => setSelectedTaskId(null)}
+          onClose={closeTask}
         />
       ) : null}
     </main>
