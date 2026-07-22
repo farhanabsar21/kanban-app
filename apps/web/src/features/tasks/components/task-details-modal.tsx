@@ -34,6 +34,7 @@ import { TaskModalSkeleton } from "../../../components/shared/task-modal-skeleto
 import { ErrorState } from "../../../components/shared/error-state";
 import { useMe } from "../../auth/hooks/use-auth";
 import { useCommentTyping } from "../../comments/hooks/use-comment-typing";
+import { Markdown } from "../../../components/shared/markdown";
 
 type Props = {
   taskId: string;
@@ -622,10 +623,7 @@ export function TaskDetailsModal({
                           {formatCommentDate(comment.createdAt)}
                         </span>
                       </div>
-
-                      <p className="whitespace-pre-wrap text-sm leading-6 text-slate-300">
-                        {comment.body}
-                      </p>
+                      <Markdown>{comment.body}</Markdown>
                     </div>
                   ))
                 )}
