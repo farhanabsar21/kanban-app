@@ -66,6 +66,13 @@ export function CreateCommentForm({
         </div>
       ) : null}
 
+      <div className="mb-2 flex gap-3 text-xs text-slate-500">
+        <span>**bold**</span>
+        <span># heading</span>
+        <span>- list</span>
+        <span>`code`</span>
+      </div>
+
       <textarea
         {...form.register("body")}
         rows={3}

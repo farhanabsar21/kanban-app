@@ -2,6 +2,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Calendar, Clock, Flag, MessageSquare } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { type BoardTask } from "../../boards/api/board-api";
+import { Markdown } from "../../../components/shared/markdown";
 
 type Props = {
   task: BoardTask;
@@ -115,11 +116,7 @@ export function SortableTaskCard({ task, onOpen, disabled }: Props) {
         </span>
       </div>
 
-      {task.description ? (
-        <p className="mb-3 line-clamp-2 text-sm text-slate-400">
-          {task.description}
-        </p>
-      ) : null}
+      <Markdown>{task.description ?? ""}</Markdown>
 
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span className="inline-flex items-center gap-1">
